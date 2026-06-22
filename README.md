@@ -24,7 +24,9 @@ python model.py
 ## 🧠 What it does
 - Predicts an HDB flat's resale price from floor area, lease year, floor level,
   **flat type**, and **town**.
-- Reports its own accuracy (MAE — average dollar error) tested on unseen flats.
+- Reports its own accuracy on unseen flats using **three scorecards**: MAE
+  (average dollar error), MAPE (average % error), and R² (share of price
+  variation explained).
 - Compares Linear Regression vs Random Forest and deploys the better one.
 
 ## ➕ Adding your own features (do it in ONE place)
@@ -52,7 +54,24 @@ runtime.txt                   Python version pin for Streamlit Cloud
 facilitator_run_sheet.md      2-hour session plan (Kolb's cycle)
 explainer.html                Interactive concept aid (MAE / features / overfitting)
 notebooks/L06_practice.ipynb  Self-runnable hands-on notebook (incl. model stacking)
+notebooks/data/               HDB resale dataset the notebook downloads from this repo
 ```
+
+## 📓 What's in the notebook (`notebooks/L06_practice.ipynb`)
+A guided, self-runnable lab that takes the 3-feature baseline and makes it better
+*and* more trustworthy. Recently added:
+- **Plain-English metrics primer** — a no-stats-needed explanation of MAE, MAPE,
+  and R² before Part A, so learners know what each score means.
+- **Three scorecards everywhere** — Parts A–D now each report MAE, MAPE, and R²
+  (not just MAE), including the train-vs-test gap as an overfitting signal.
+- **"Reading the output" notes** — every code cell is followed by a short
+  explanation interpreting what its numbers actually mean.
+- **Self-hosted data** — the setup cell downloads the dataset from this repo's
+  `notebooks/data/` folder rather than a third-party source.
+
+Roughly: 3 features → ~S\$102k MAE / ~20% MAPE / R² ~0.50; add flat type + town →
+~S\$83k / ~17% / ~0.70; Random Forest → ~S\$73k / ~14% / ~0.77. Stacking is shown
+to barely beat a single good model — a deliberate "don't over-engineer" lesson.
 
 ## ☁️ Deploy to Streamlit Community Cloud (free)
 1. Push this folder to a GitHub repo (see steps below).
@@ -65,7 +84,7 @@ notebooks/L06_practice.ipynb  Self-runnable hands-on notebook (incl. model stack
 > against the latest data.
 
 ## 📚 Learning concepts covered
-MAE · train/test split · feature engineering · model selection · overfitting · model stacking.
+MAE · MAPE · R² · train/test split · feature engineering · model selection · overfitting · model stacking.
 
 ## License
 MIT — see `LICENSE`.
