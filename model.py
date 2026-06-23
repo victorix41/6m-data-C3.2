@@ -72,6 +72,24 @@ def train_model():
     categories = {col: sorted(data[col].dropna().unique().tolist())
                   for col in ft.categorical_cols()}
 
+    # Plausible numeric ranges CONDITIONED on flat_type, so the web form can
+    # stop users picking impossible combos (e.g. a "1 ROOM" flat at 90 sqm).
+    # We use the 1st–99th percentile actually seen in the data for each
+    # flat_type to ignore a handful of outliers. Falls back to global ranges.
+    numeric_ranges_by_flat_type = {}
+    if "flat_type" in ft.categorical_cols():
+        for ftype, grp in data.groupby("flat_type"):
+            numeric_ranges_by_flat_type[ftype] = {
+                col: [float(grp[col].quantile(0.01)),
+                      float(grp[col].quantile(0.99))]
+                for col in ft.numeric_cols()
+            }
+
+    numeric_ranges = {
+        col: [float(data[col].quantile(0.01)), float(data[col].quantile(0.99))]
+        for col in ft.numeric_cols()
+    }
+
     return {
         "model": best_model,
         "columns": list(X.columns),
@@ -79,6 +97,8 @@ def train_model():
         "mae": best_mae,
         "all_scores": {n: s[1] for n, s in scores.items()},
         "categories": categories,
+        "numeric_ranges": numeric_ranges,
+        "numeric_ranges_by_flat_type": numeric_ranges_by_flat_type,
         "n_rows": len(data),
     }
 

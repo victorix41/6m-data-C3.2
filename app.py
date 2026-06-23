@@ -51,17 +51,47 @@ with st.expander("📊 How accurate is this model?", expanded=False):
     )
 
 # ---- Inputs (built automatically from features.py) ----
+# Categoricals are rendered FIRST (so we know the chosen flat_type), then the
+# numeric sliders adapt their range to that flat_type. This stops the user
+# picking impossible combos like a "1 ROOM" flat at 90 sqm — the slider simply
+# won't go there, because no such flat exists in the training data.
 st.sidebar.header("Flat details")
 user_input = {}
+
+# 1) Categorical dropdowns first
 for f in ft.FEATURES:
+    if f["type"] != "categorical":
+        continue
+    choices = bundle["categories"].get(f["col"], [])
+    user_input[f["col"]] = st.sidebar.selectbox(f["label"], choices)
+
+# Ranges observed in the data for the chosen flat_type (fallback: global ranges)
+chosen_flat_type = user_input.get("flat_type")
+ranges = bundle.get("numeric_ranges_by_flat_type", {}).get(
+    chosen_flat_type, bundle.get("numeric_ranges", {})
+)
+
+# 2) Numeric sliders, clamped to what's plausible for the chosen flat_type
+for f in ft.FEATURES:
+    if f["type"] != "numeric":
+        continue
     col, label = f["col"], f["label"]
-    if f["type"] == "numeric":
-        user_input[col] = st.sidebar.slider(
-            label, f["min"], f["max"], f["default"], f["step"]
-        )
-    else:  # categorical -> dropdown using the choices seen during training
-        choices = bundle["categories"].get(col, [])
-        user_input[col] = st.sidebar.selectbox(label, choices)
+    lo, hi = f["min"], f["max"]
+    if col in ranges:
+        # Stay within the feature's own bounds, but tighten to observed range
+        lo = max(f["min"], int(ranges[col][0]))
+        hi = min(f["max"], int(round(ranges[col][1])))
+        if lo >= hi:                      # guard: a flat_type with one value
+            hi = lo + f["step"]
+    default = min(max(f["default"], lo), hi)   # keep default inside [lo, hi]
+    user_input[col] = st.sidebar.slider(label, lo, hi, default, f["step"])
+
+if chosen_flat_type and bundle.get("numeric_ranges_by_flat_type"):
+    st.sidebar.caption(
+        f"ℹ️ Slider ranges are limited to what actually exists for "
+        f"**{chosen_flat_type}** flats in the data, so you can't build a "
+        f"flat that was never sold."
+    )
 
 # ---- Show the chosen flat ----
 st.write("### Your flat")
